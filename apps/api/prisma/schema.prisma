@@ -6,3 +6,113 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
+enum TemplateStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum VersionStatus {
+  DRAFT
+  PUBLISHED
+}
+
+enum DocumentStatus {
+  DRAFT
+  GENERATED
+  FAILED
+}
+
+enum RenderJobStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  FAILED
+}
+
+model DocumentTemplate {
+  id            String          @id @default(uuid())
+  name          String
+  description   String?
+  documentType  String
+  status        TemplateStatus  @default(DRAFT)
+  // Logical reference to the current (latest published) version. Kept as a
+  // plain column to avoid a cyclic template <-> version foreign key.
+  currentVersionId String?
+  versions      DocumentTemplateVersion[] @relation("TemplateVersions")
+  generatedDocuments GeneratedDocument[]
+  createdBy     String?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  @@index([documentType])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model DocumentTemplateVersion {
+  id            String          @id @default(uuid())
+  templateId    String
+  template      DocumentTemplate @relation("TemplateVersions", fields: [templateId], references: [id])
+  versionNumber Int
+  schemaVersion String
+  configuration Json
+  status        VersionStatus   @default(DRAFT)
+  createdBy     String?
+  createdAt     DateTime        @default(now())
+  generatedDocuments GeneratedDocument[]
+
+  @@index([templateId])
+  @@unique([templateId, versionNumber])
+}
+
+model GeneratedDocument {
+  id                String          @id @default(uuid())
+  templateId        String
+  templateVersionId String
+  template          DocumentTemplate @relation(fields: [templateId], references: [id])
+  templateVersion   DocumentTemplateVersion @relation(fields: [templateVersionId], references: [id], onDelete: Restrict)
+  documentType      String
+  documentNumber    String?
+  externalReferenceId String?
+  data              Json
+  status            DocumentStatus  @default(GENERATED)
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  renderJobs        DocumentRenderJob[]
+
+  @@index([templateId])
+  @@index([templateVersionId])
+  @@index([documentType])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model DocumentRenderJob {
+  id        String          @id @default(uuid())
+  documentId String
+  document  GeneratedDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  status    RenderJobStatus @default(PENDING)
+  errorMessage String?
+  startedAt DateTime?
+  completedAt DateTime?
+  createdAt DateTime        @default(now())
+
+  @@index([documentId])
+  @@index([status])
+}
+
+model DocumentAuditEvent {
+  id         String   @id @default(uuid())
+  entityType String
+  entityId   String
+  action     String
+  actorId    String?
+  metadata   Json?
+  createdAt  DateTime @default(now())
+
+  @@index([entityType, entityId])
+  @@index([action])
+  @@index([createdAt])
+}
