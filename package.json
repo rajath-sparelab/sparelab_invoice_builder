@@ -1,0 +1,14 @@
+{
+  "name": "sparelab-document-builder",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev:web": "pnpm --filter @sparelab/web dev",
+    "dev:api": "pnpm --filter @sparelab/api dev",
+    "build:web": "pnpm --filter @sparelab/web build",
+    "build:api": "pnpm --filter @sparelab/api build",
+    "lint": "pnpm -r run --if-present lint",
+    "test": "pnpm -r run --if-present test"
+  },
+  "packageManager": "pnpm@11.20.0"
+}
