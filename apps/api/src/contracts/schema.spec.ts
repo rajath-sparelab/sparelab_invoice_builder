@@ -1,4 +1,13 @@
-import { validateTemplateConfiguration, TemplateDocumentTypeSchema } from '@sparelab/contracts';
+import {
+  validateTemplateConfiguration,
+  TemplateDocumentTypeSchema,
+  createTemplateRequestSchema,
+  updateTemplateRequestSchema,
+  createTemplateVersionRequestSchema,
+  publishTemplateVersionRequestSchema,
+  createDocumentRequestSchema,
+  documentDataSchema,
+} from '@sparelab/contracts';
 
 describe('Template configuration Zod schema', () => {
   const validConfig = {
@@ -72,5 +81,110 @@ describe('Template configuration Zod schema', () => {
     expect(TemplateDocumentTypeSchema.parse('INVOICE')).toBe('INVOICE');
     expect(TemplateDocumentTypeSchema.parse('PURCHASE_ORDER')).toBe('PURCHASE_ORDER');
     expect(() => TemplateDocumentTypeSchema.parse('NOT_A_TYPE')).toThrow();
+  });
+
+  it('rejects arbitrary HTML and JavaScript in text blocks', () => {
+    const config = structuredClone(validConfig);
+    (config.sections[0].blocks[0] as any).content = '<img src=x onerror=alert(1)>';
+    expect(() => validateTemplateConfiguration(config)).toThrow();
+  });
+
+  it('rejects unsupported style properties', () => {
+    const config = structuredClone(validConfig);
+    (config.sections[0].blocks[0] as any).style = { onclick: 'alert(1)' };
+    expect(() => validateTemplateConfiguration(config)).toThrow();
+  });
+
+  it('accepts conditional visibility and repeating table rows', () => {
+    const config = structuredClone(validConfig);
+    (config.sections[0] as any).visibleWhen = {
+      field: 'showItems',
+      operator: 'eq',
+      value: true,
+    };
+    (config.sections[0].blocks[2] as any).repeat = '{{items}}';
+    const result = validateTemplateConfiguration(config);
+    expect((result.sections[0] as any).visibleWhen.value).toBe(true);
+    expect((result.sections[0].blocks[2] as any).repeat).toBe('{{items}}');
+  });
+
+  it('rejects conditional visibility without a comparison value', () => {
+    const config = structuredClone(validConfig);
+    (config.sections[0] as any).visibleWhen = {
+      field: 'showItems',
+      operator: 'eq',
+    };
+    expect(() => validateTemplateConfiguration(config)).toThrow();
+  });
+});
+
+describe('Request Zod schemas', () => {
+  it('accepts a valid template creation request', () => {
+    const result = createTemplateRequestSchema.parse({
+      name: 'Invoice Template',
+      documentType: 'INVOICE',
+      configuration: {
+        sections: [
+          {
+            id: 's1',
+            blocks: [{ id: 'b1', type: 'text', content: 'Invoice' }],
+          },
+        ],
+      },
+    });
+    expect(result.configuration.schemaVersion).toBe('1.0.0');
+    expect(result.configuration.sections[0].blocks[0].type).toBe('text');
+  });
+
+  it('rejects unknown fields in requests', () => {
+    expect(() =>
+      createTemplateRequestSchema.parse({
+        name: 'Template',
+        documentType: 'INVOICE',
+        configuration: {
+          sections: [{ id: 's1', blocks: [{ id: 'b1', type: 'text', content: 'X' }] }],
+        },
+        isAdmin: true,
+      }),
+    ).toThrow();
+    expect(() => updateTemplateRequestSchema.parse({})).toThrow();
+    expect(() =>
+      createTemplateVersionRequestSchema.parse({
+        configuration: {
+          sections: [{ id: 's1', blocks: [{ id: 'b1', type: 'text', content: 'X' }] }],
+        },
+        status: 'PUBLISHED',
+      }),
+    ).toThrow();
+  });
+
+  it('requires a UUID when publishing a version', () => {
+    expect(() => publishTemplateVersionRequestSchema.parse({ versionId: 'v1' })).toThrow();
+    expect(() =>
+      publishTemplateVersionRequestSchema.parse({
+        versionId: '00000000-0000-0000-0000-000000000000',
+      }),
+    ).not.toThrow();
+  });
+
+  it('validates document creation requests', () => {
+    const valid = {
+      templateVersionId: '00000000-0000-0000-0000-000000000000',
+      documentType: 'INVOICE',
+      data: { title: 'INV-001', lines: [{ amount: 10 }] },
+    };
+    expect(() => createDocumentRequestSchema.parse(valid)).not.toThrow();
+    expect(() =>
+      createDocumentRequestSchema.parse({ ...valid, templateVersionId: 'v1' }),
+    ).toThrow();
+    expect(() =>
+      createDocumentRequestSchema.parse({ ...valid, data: { created: new Date() } }),
+    ).toThrow();
+  });
+
+  it('accepts JSON values only in document data', () => {
+    expect(() => documentDataSchema.parse({ a: 1, b: null, c: [true, 'x'] })).not.toThrow();
+    expect(() => documentDataSchema.parse({ a: Number.NaN })).toThrow();
+    expect(() => documentDataSchema.parse({ a: undefined })).toThrow();
   });
 });

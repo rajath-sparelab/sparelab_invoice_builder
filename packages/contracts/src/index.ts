@@ -17,6 +17,36 @@ export { SectionSchema } from './schemas/template-config';
 
 export {
   type DocumentData,
+  type JsonObject,
+  type JsonValue,
   validateDocumentData,
   documentDataSchema,
+  jsonValueSchema,
 } from './schemas/document-data';
+
+export {
+  type BlockStyle,
+  type VisibilityCondition,
+  BlockStyleSchema,
+  VisibilityConditionSchema,
+} from './schemas/template-config';
+
+export {
+  type CreateTemplateRequest,
+  type UpdateTemplateRequest,
+  type CreateTemplateVersionRequest,
+  type PublishTemplateVersionRequest,
+  type PaginationQuery,
+  type DocumentType,
+  createTemplateRequestSchema,
+  updateTemplateRequestSchema,
+  createTemplateVersionRequestSchema,
+  publishTemplateVersionRequestSchema,
+  paginationQuerySchema,
+  documentTypeSchema,
+} from './schemas/template-requests';
+
+export {
+  type CreateDocumentRequest,
+  createDocumentRequestSchema,
+} from './schemas/document-requests';

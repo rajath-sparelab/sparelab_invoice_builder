@@ -1,28 +1,44 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { templateConfigurationSchema } from '@sparelab/contracts';
 import { DocumentsService } from './documents.service';
 import { DocumentsModule } from './documents.module';
 import { PrismaService } from '../../infrastructure/database/prisma.service';
 
-const baseConfig = {
+const baseConfig = templateConfigurationSchema.parse({
   schemaVersion: '1.0.0',
-  page: { size: 'A4', orientation: 'portrait', margins: { top: 20, right: 20, bottom: 20, left: 20 } },
+  page: {
+    size: 'A4',
+    orientation: 'portrait',
+    margins: { top: 20, right: 20, bottom: 20, left: 20 },
+  },
   sections: [
     {
       id: 's1',
       name: 'Body',
-      blocks: [
-        { id: 'b1', type: 'text', content: 'Invoice', binding: '{{title}}' },
-      ],
+      blocks: [{ id: 'b1', type: 'text', content: 'Invoice', binding: '{{title}}' }],
     },
   ],
-};
+});
+
+const changedConfig = templateConfigurationSchema.parse({
+  schemaVersion: '1.0.0',
+  sections: [
+    {
+      id: 's1',
+      blocks: [{ id: 'b1', type: 'text', content: 'Updated invoice' }],
+    },
+  ],
+});
 
 function uniqueName(prefix: string) {
   return `${prefix} ${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
-async function createPublishedTemplateVersion(prisma: PrismaService, documentType = 'INVOICE') {
+async function createPublishedTemplateVersion(
+  prisma: PrismaService,
+  documentType = 'INVOICE',
+) {
   const template = await prisma.documentTemplate.create({
     data: {
       name: uniqueName('Doc Template'),
@@ -97,9 +113,25 @@ describe('DocumentsService (integration)', () => {
     ).rejects.toThrow(BadRequestException);
   });
 
+  it('rejects nested non-JSON document data', async () => {
+    const { version } = await createPublishedTemplateVersion(prisma);
+
+    await expect(
+      service.createDocument({
+        templateVersionId: version.id,
+        documentType: 'INVOICE',
+        data: { nested: { value: Number.NaN } } as any,
+      }),
+    ).rejects.toThrow(BadRequestException);
+  });
+
   it('rejects a reference to a draft template version', async () => {
     const template = await prisma.documentTemplate.create({
-      data: { name: uniqueName('Draft Template'), documentType: 'QUOTATION', status: 'DRAFT' },
+      data: {
+        name: uniqueName('Draft Template'),
+        documentType: 'QUOTATION',
+        status: 'DRAFT',
+      },
     });
     const draftVersion = await prisma.documentTemplateVersion.create({
       data: {
@@ -133,11 +165,49 @@ describe('DocumentsService (integration)', () => {
     ).rejects.toThrow(NotFoundException);
   });
 
+  it('rejects a template reference that does not match the version', async () => {
+    const { version } = await createPublishedTemplateVersion(prisma);
+    const { template: otherTemplate } = await createPublishedTemplateVersion(prisma);
+
+    await expect(
+      service.createDocument({
+        templateId: otherTemplate.id,
+        templateVersionId: version.id,
+        documentType: 'INVOICE',
+        data: { title: 'X' },
+      }),
+    ).rejects.toThrow(BadRequestException);
+  });
+
+  it('rejects documents created from an archived template', async () => {
+    const { template, version } = await createPublishedTemplateVersion(prisma);
+    await prisma.documentTemplate.update({
+      where: { id: template.id },
+      data: { status: 'ARCHIVED' },
+    });
+
+    await expect(
+      service.createDocument({
+        templateVersionId: version.id,
+        documentType: 'INVOICE',
+        data: { title: 'X' },
+      }),
+    ).rejects.toThrow(BadRequestException);
+  });
+
   it('lists generated documents with pagination', async () => {
     const { version } = await createPublishedTemplateVersion(prisma);
 
-    await service.createDocument({ templateVersionId: version.id, documentType: 'INVOICE', data: { a: 1 } });
-    await service.createDocument({ templateVersionId: version.id, documentType: 'INVOICE', data: { a: 2 } });
+    await service.createDocument({
+      templateVersionId: version.id,
+      documentType: 'INVOICE',
+      data: { a: 1 },
+    });
+    await service.createDocument({
+      templateVersionId: version.id,
+      documentType: 'INVOICE',
+      data: { a: 2 },
+    });
 
     const result = await service.findAll(1, 10);
 
@@ -161,9 +231,61 @@ describe('DocumentsService (integration)', () => {
     expect(fetched.templateVersion.status).toBe('PUBLISHED');
   });
 
+  it('keeps the original version reference after a newer version is published', async () => {
+    const { template, version } = await createPublishedTemplateVersion(prisma);
+    const document = await service.createDocument({
+      templateVersionId: version.id,
+      documentType: 'INVOICE',
+      data: { title: 'ORIGINAL' },
+    });
+
+    const newerVersion = await prisma.documentTemplateVersion.create({
+      data: {
+        templateId: template.id,
+        versionNumber: 2,
+        schemaVersion: '1.0.0',
+        configuration: changedConfig as any,
+        status: 'PUBLISHED',
+      },
+    });
+    await prisma.documentTemplate.update({
+      where: { id: template.id },
+      data: { currentVersionId: newerVersion.id },
+    });
+
+    const fetched = await service.findOne(document.id);
+    const original = await prisma.documentTemplateVersion.findUniqueOrThrow({
+      where: { id: version.id },
+    });
+
+    expect(fetched.templateVersionId).toBe(version.id);
+    expect(fetched.templateVersion.configuration).toEqual(baseConfig);
+    expect(original.configuration).toEqual(baseConfig);
+  });
+
+  it('records an audit event for document creation', async () => {
+    const { version } = await createPublishedTemplateVersion(prisma);
+    const document = await service.createDocument({
+      templateVersionId: version.id,
+      documentType: 'INVOICE',
+      data: { title: 'AUDIT' },
+    });
+
+    const events = await prisma.documentAuditEvent.findMany({
+      where: { entityType: 'GeneratedDocument', entityId: document.id },
+    });
+
+    expect(events).toHaveLength(1);
+    expect(events[0].action).toBe('document.created');
+    expect(events[0].metadata).toMatchObject({
+      templateId: version.templateId,
+      templateVersionId: version.id,
+    });
+  });
+
   it('throws 404 for a missing document', async () => {
-    await expect(service.findOne('00000000-0000-0000-0000-000000000000')).rejects.toThrow(
-      NotFoundException,
-    );
+    await expect(
+      service.findOne('00000000-0000-0000-0000-000000000000'),
+    ).rejects.toThrow(NotFoundException);
   });
 });

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { jsonValueSchema } from './document-data';
 
 export const TemplateDocumentTypeSchema = z.enum([
   'INVOICE',
@@ -15,26 +16,135 @@ export const TemplateStatusSchema = z.enum(['DRAFT', 'PUBLISHED', 'ARCHIVED']);
 export type TemplateStatus = z.infer<typeof TemplateStatusSchema>;
 
 // A dynamic field binding references document data, e.g. "{{invoiceNumber}}".
-export const BindingSchema = z.string().regex(/^{{\s*[\w.]+\s*}}$/, {
-  message: 'Binding must be in the format {{fieldName}}',
-});
+export const BindingSchema = z
+  .string()
+  .regex(/^{{\s*[A-Za-z_]\w*(?:\.[A-Za-z_]\w*)*\s*}}$/, {
+    message: 'Binding must be in the format {{fieldName}}',
+  });
 export type Binding = z.infer<typeof BindingSchema>;
 
+const idSchema = z.string().regex(/^[A-Za-z0-9_-]{1,100}$/, 'Invalid id');
+const dataPathSchema = z
+  .string()
+  .regex(/^[A-Za-z_]\w*(?:\.[A-Za-z_]\w*)*$/, 'Invalid data path');
+const unsafeTextPattern = /<\s*\/?\s*[a-z][^>]*>|javascript:|expression\s*\(|on[a-z]+\s*=/i;
+const safeTextSchema = z
+  .string()
+  .max(5000)
+  .refine((value) => !unsafeTextPattern.test(value), {
+    message: 'HTML, JavaScript and executable expressions are not allowed',
+  });
+
+const stylePropertySchema = z.enum([
+  'backgroundColor',
+  'color',
+  'fontFamily',
+  'fontSize',
+  'fontWeight',
+  'fontStyle',
+  'textAlign',
+  'textDecoration',
+  'lineHeight',
+  'letterSpacing',
+  'padding',
+  'paddingTop',
+  'paddingRight',
+  'paddingBottom',
+  'paddingLeft',
+  'margin',
+  'marginTop',
+  'marginRight',
+  'marginBottom',
+  'marginLeft',
+  'border',
+  'borderColor',
+  'borderWidth',
+  'borderStyle',
+  'borderRadius',
+  'width',
+  'height',
+  'maxWidth',
+  'minWidth',
+  'display',
+  'flexDirection',
+  'justifyContent',
+  'alignItems',
+  'gap',
+  'opacity',
+  'pageBreakBefore',
+  'pageBreakAfter',
+]);
+
+const safeStyleValueSchema = z.union([
+  z.number().finite(),
+  z.boolean(),
+  z.string().max(200).refine(
+    (value) => !/[<>]|javascript:|expression\s*\(|url\s*\(/i.test(value),
+    { message: 'Unsafe style value' },
+  ),
+]);
+
 export const BlockStyleSchema = z
-  .record(z.string(), z.union([z.string(), z.number(), z.boolean()]))
+  .record(z.string(), safeStyleValueSchema)
+  .refine(
+    (style) =>
+      Object.keys(style).every((key) => stylePropertySchema.safeParse(key).success),
+    { message: 'Unsupported style property' },
+  )
   .optional();
+export type BlockStyle = z.infer<typeof BlockStyleSchema>;
+
+export const VisibilityConditionSchema = z
+  .object({
+    field: dataPathSchema,
+    operator: z.enum([
+      'eq',
+      'ne',
+      'gt',
+      'gte',
+      'lt',
+      'lte',
+      'in',
+      'notIn',
+      'exists',
+      'notExists',
+    ]),
+    value: jsonValueSchema.optional(),
+  })
+  .superRefine((condition, ctx) => {
+    const valueRequired = !['exists', 'notExists'].includes(condition.operator);
+    if (valueRequired && condition.value === undefined) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['value'],
+        message: 'A comparison value is required for this operator',
+      });
+    }
+    if (
+      ['in', 'notIn'].includes(condition.operator) &&
+      !Array.isArray(condition.value)
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['value'],
+        message: 'This operator requires an array value',
+      });
+    }
+  });
+export type VisibilityCondition = z.infer<typeof VisibilityConditionSchema>;
 
 export const BaseBlockSchema = z.object({
-  id: z.string().min(1, 'Block id is required'),
+  id: idSchema,
   type: z.string().min(1, 'Block type is required'),
   visible: z.boolean().optional(),
+  visibleWhen: VisibilityConditionSchema.optional(),
   style: BlockStyleSchema,
 });
 export type BaseBlock = z.infer<typeof BaseBlockSchema>;
 
 export const TextBlockSchema = BaseBlockSchema.extend({
   type: z.literal('text'),
-  content: z.string(),
+  content: safeTextSchema,
   binding: BindingSchema.optional(),
 });
 export type TextBlock = z.infer<typeof TextBlockSchema>;
@@ -45,26 +155,27 @@ export const ImageBlockSchema = BaseBlockSchema.extend({
   src: z
     .string()
     .refine(
-      (value) => /^https?:\/\//.test(value) || BindingSchema.safeParse(value).success,
+      (value) => /^https?:\/\/[^\s<>]+$/.test(value) || BindingSchema.safeParse(value).success,
       { message: 'Image src must be a URL or a {{binding}}' },
     ),
-  alt: z.string().optional(),
-  width: z.number().positive().optional(),
-  height: z.number().positive().optional(),
+  alt: safeTextSchema.optional(),
+  width: z.number().positive().finite().optional(),
+  height: z.number().positive().finite().optional(),
 });
 export type ImageBlock = z.infer<typeof ImageBlockSchema>;
 
 export const TableColumnSchema = z.object({
-  id: z.string().min(1),
-  header: z.string().min(1),
-  key: z.string().min(1),
+  id: idSchema,
+  header: safeTextSchema,
+  key: dataPathSchema,
 });
 export type TableColumn = z.infer<typeof TableColumnSchema>;
 
 export const TableBlockSchema = BaseBlockSchema.extend({
   type: z.literal('table'),
   columns: z.array(TableColumnSchema).min(1, 'A table must have at least one column'),
-  rows: z.array(z.array(z.string())).min(1, 'A table must have at least one row'),
+  rows: z.array(z.array(safeTextSchema)).min(1, 'A table must have at least one row'),
+  repeat: BindingSchema.optional(),
 });
 export type TableBlock = z.infer<typeof TableBlockSchema>;
 
@@ -76,9 +187,10 @@ export const BlockSchema = z.discriminatedUnion('type', [
 export type Block = z.infer<typeof BlockSchema>;
 
 export const SectionSchema = z.object({
-  id: z.string().min(1),
-  name: z.string().optional(),
+  id: idSchema,
+  name: safeTextSchema.optional(),
   visible: z.boolean().optional(),
+  visibleWhen: VisibilityConditionSchema.optional(),
   blocks: z.array(BlockSchema),
   style: BlockStyleSchema,
 });
@@ -89,10 +201,10 @@ export const PageSettingsSchema = z.object({
   orientation: z.enum(['portrait', 'landscape']).default('portrait'),
   margins: z
     .object({
-      top: z.number().nonnegative().default(20),
-      right: z.number().nonnegative().default(20),
-      bottom: z.number().nonnegative().default(20),
-      left: z.number().nonnegative().default(20),
+      top: z.number().nonnegative().finite().default(20),
+      right: z.number().nonnegative().finite().default(20),
+      bottom: z.number().nonnegative().finite().default(20),
+      left: z.number().nonnegative().finite().default(20),
     })
     .default({ top: 20, right: 20, bottom: 20, left: 20 }),
 });

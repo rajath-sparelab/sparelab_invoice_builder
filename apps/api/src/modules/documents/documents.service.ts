@@ -3,9 +3,9 @@ import {
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
+import { validateDocumentData } from '@sparelab/contracts';
 import { PrismaService } from '../../infrastructure/database/prisma.service';
 import { AuditService } from '../audit/audit.service';
-import { validateDocumentData } from '@sparelab/contracts';
 import { CreateDocumentDto } from './dto';
 
 const ENTITY_DOCUMENT = 'GeneratedDocument';
@@ -29,45 +29,62 @@ export class DocumentsService {
       );
     }
 
+    if (dto.templateId && dto.templateId !== version.templateId) {
+      throw new BadRequestException(
+        `Template version "${version.id}" does not belong to template "${dto.templateId}"`,
+      );
+    }
+
+    if (version.template.status === 'ARCHIVED') {
+      throw new BadRequestException(
+        `Template "${version.templateId}" is archived; documents cannot be created from it`,
+      );
+    }
+
     if (version.status !== 'PUBLISHED') {
       throw new BadRequestException(
-        `Template version "${dto.templateVersionId}" is not published; only published versions can be used to generate documents`,
+        `Template version "${version.id}" is not published; only published versions can be used to generate documents`,
       );
     }
 
     let validatedData: Record<string, unknown>;
     try {
       validatedData = validateDocumentData(dto.data);
-    } catch (error: any) {
+    } catch {
       throw new BadRequestException('Document data must be a JSON object');
     }
 
     const actor = dto.createdBy ?? null;
 
-    const document = await this.prisma.generatedDocument.create({
-      data: {
-        templateId: version.templateId,
-        templateVersionId: version.id,
-        documentType: dto.documentType,
-        externalReferenceId: dto.externalReferenceId ?? null,
-        data: validatedData as any,
-        status: 'GENERATED',
-      },
-    });
+    return this.prisma.$transaction(async (tx) => {
+      const document = await tx.generatedDocument.create({
+        data: {
+          templateId: version.templateId,
+          templateVersionId: version.id,
+          documentType: dto.documentType,
+          externalReferenceId: dto.externalReferenceId ?? null,
+          data: validatedData as any,
+          status: 'GENERATED',
+        },
+      });
 
-    await this.audit.record({
-      entityType: ENTITY_DOCUMENT,
-      entityId: document.id,
-      action: 'document.created',
-      actorId: actor,
-      metadata: {
-        templateId: version.templateId,
-        templateVersionId: version.id,
-        documentType: dto.documentType,
-      },
-    });
+      await this.audit.record(
+        {
+          entityType: ENTITY_DOCUMENT,
+          entityId: document.id,
+          action: 'document.created',
+          actorId: actor,
+          metadata: {
+            templateId: version.templateId,
+            templateVersionId: version.id,
+            documentType: dto.documentType,
+          },
+        },
+        tx,
+      );
 
-    return document;
+      return document;
+    });
   }
 
   async findAll(page: number, limit: number) {
