@@ -233,6 +233,11 @@ export default function TemplateDetailPage() {
               >
                 All templates
               </Button>
+              <Button
+                onClick={() => router.push(`/templates/${templateId}/editor`)}
+              >
+                Open editor
+              </Button>
             </>
           )}
         </div>
