@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Save, Undo, Redo, MoreHorizontal, CheckCircle2, AlertCircle, FileText } from 'lucide-react';
+import { Save, Undo, Redo, CheckCircle2, AlertCircle, FileText, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
@@ -12,6 +12,8 @@ interface EditorToolbarProps {
   onRedo: () => void;
   onSave: () => void;
   onPageSettings: () => void;
+  onTogglePreview: () => void;
+  previewEnabled: boolean;
   saving: boolean;
   saveStatus: 'idle' | 'saving' | 'saved' | 'error';
   saveError: string | null;
@@ -25,6 +27,8 @@ export function EditorToolbar({
   onRedo,
   onSave,
   onPageSettings,
+  onTogglePreview,
+  previewEnabled,
   saving,
   saveStatus,
   saveError,
@@ -77,6 +81,15 @@ export function EditorToolbar({
             aria-label="Page settings"
           >
             <SlidersHorizontal className="h-3 w-3" />
+          </Button>
+          <Button
+            size="sm"
+            variant={previewEnabled ? 'default' : 'outline'}
+            onClick={onTogglePreview}
+            aria-label="Toggle preview"
+          >
+            <Eye className="h-3 w-3" />
+            <span className="ml-1 text-xs">Preview</span>
           </Button>
         </div>
       </div>

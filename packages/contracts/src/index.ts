@@ -32,6 +32,23 @@ export {
 } from './schemas/template-config';
 
 export {
+  getBindingPath,
+  resolveBinding,
+  resolveBindingText,
+  resolveCellText,
+} from './renderer/binding';
+export { evaluateVisibility } from './renderer/visibility';
+export {
+  PAGE_SIZES,
+  DEFAULT_MARGINS,
+  contentBox,
+  type PageSize,
+  type PageSizeName,
+} from './renderer/layout';
+
+export type { Binding } from './schemas/template-config';
+
+export {
   type CreateTemplateRequest,
   type UpdateTemplateRequest,
   type CreateTemplateVersionRequest,

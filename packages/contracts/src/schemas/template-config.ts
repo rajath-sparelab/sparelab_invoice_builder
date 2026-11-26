@@ -179,10 +179,23 @@ export const TableBlockSchema = BaseBlockSchema.extend({
 });
 export type TableBlock = z.infer<typeof TableBlockSchema>;
 
+export const DividerBlockSchema = BaseBlockSchema.extend({
+  type: z.literal('divider'),
+});
+export type DividerBlock = z.infer<typeof DividerBlockSchema>;
+
+export const SpacerBlockSchema = BaseBlockSchema.extend({
+  type: z.literal('spacer'),
+  height: z.number().positive().finite().optional(),
+});
+export type SpacerBlock = z.infer<typeof SpacerBlockSchema>;
+
 export const BlockSchema = z.discriminatedUnion('type', [
   TextBlockSchema,
   ImageBlockSchema,
   TableBlockSchema,
+  DividerBlockSchema,
+  SpacerBlockSchema,
 ]);
 export type Block = z.infer<typeof BlockSchema>;
 

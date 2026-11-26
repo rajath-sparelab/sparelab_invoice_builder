@@ -11,6 +11,7 @@ import { BlockLibrary } from '@/components/editor/BlockLibrary';
 import { DocumentCanvas } from '@/components/editor/DocumentCanvas';
 import { PropertiesEditor } from '@/components/editor/PropertiesEditor';
 import { EditorToolbar } from '@/components/editor/EditorToolbar';
+import { LivePreview } from '@/components/renderer/LivePreview';
 import { cn } from '@/lib/utils';
 
 interface EditorBlock {
@@ -116,6 +117,7 @@ export default async function TemplateEditorPage({ params }: EditorPageProps) {
   const [saving, setSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [previewEnabled, setPreviewEnabled] = useState(false);
 
   const sections = useMemo(
     () => (configuration?.sections ?? []).map((s) => ({
@@ -473,6 +475,8 @@ export default async function TemplateEditorPage({ params }: EditorPageProps) {
         onRedo={handleRedo}
         onSave={handleSave}
         onPageSettings={() => setSelectedBlockId(null)}
+        onTogglePreview={() => setPreviewEnabled((prev) => !prev)}
+        previewEnabled={previewEnabled}
         saving={saving}
         saveStatus={saveStatus}
         saveError={saveError}
@@ -481,50 +485,56 @@ export default async function TemplateEditorPage({ params }: EditorPageProps) {
 
       <div className="flex-1 overflow-hidden">
         <div className="flex h-full overflow-hidden">
-          {/* Left panel: Block library */}
-          <BlockLibrary onAddBlock={(blockType) => {
-            // Default to first section, or create one
-            const targetSectionId = configuration.sections[0]?.id;
-            if (targetSectionId) {
-              addBlockToSection(targetSectionId, blockType as EditorBlock['type']);
-            } else {
-              addSection();
-              const newSectionId = configuration.sections[configuration.sections.length - 1]?.id;
-              if (newSectionId) {
-                addBlockToSection(newSectionId, blockType as EditorBlock['type']);
-              }
-            }
-          }} />
+          {previewEnabled ? (
+            <LivePreview config={configuration} />
+          ) : (
+            <>
+              {/* Left panel: Block library */}
+              <BlockLibrary onAddBlock={(blockType) => {
+                // Default to first section, or create one
+                const targetSectionId = configuration.sections[0]?.id;
+                if (targetSectionId) {
+                  addBlockToSection(targetSectionId, blockType as EditorBlock['type']);
+                } else {
+                  addSection();
+                  const newSectionId = configuration.sections[configuration.sections.length - 1]?.id;
+                  if (newSectionId) {
+                    addBlockToSection(newSectionId, blockType as EditorBlock['type']);
+                  }
+                }
+              }} />
 
-          {/* Center panel: Document canvas */}
-          <div className="flex-1 overflow-hidden">
-            <DocumentCanvas
-              sections={sections}
-              selectedBlockId={selectedBlockId}
-              selectedSectionId={selectedSectionId}
-              onBlockSelect={setSelectedBlockId}
-              onAddBlock={addBlockToSection}
-              onDeleteBlock={deleteBlockFromSection}
-              onDuplicateBlock={duplicateBlockInSection}
-              onAddSection={addSection}
-              onDeleteSection={deleteSectionFromConfig}
-              onSectionReorder={reorderSections}
-              onBlockReorder={reorderBlocks}
-              onLibraryDrop={addBlockToSection}
-            />
-          </div>
+              {/* Center panel: Document canvas */}
+              <div className="flex-1 overflow-hidden">
+                <DocumentCanvas
+                  sections={sections}
+                  selectedBlockId={selectedBlockId}
+                  selectedSectionId={selectedSectionId}
+                  onBlockSelect={setSelectedBlockId}
+                  onAddBlock={addBlockToSection}
+                  onDeleteBlock={deleteBlockFromSection}
+                  onDuplicateBlock={duplicateBlockInSection}
+                  onAddSection={addSection}
+                  onDeleteSection={deleteSectionFromConfig}
+                  onSectionReorder={reorderSections}
+                  onBlockReorder={reorderBlocks}
+                  onLibraryDrop={addBlockToSection}
+                />
+              </div>
 
-          {/* Right panel: Properties editor */}
-          <PropertiesEditor
-            selectedBlockId={selectedBlockId}
-            selectedSectionId={selectedSectionId}
-            blocks={blocksById}
-            sections={sectionMap}
-            page={page}
-            onBlockUpdate={updateBlockProperties}
-            onSectionUpdate={updateSectionProperties}
-            onPageUpdate={updatePageSettings}
-          />
+              {/* Right panel: Properties editor */}
+              <PropertiesEditor
+                selectedBlockId={selectedBlockId}
+                selectedSectionId={selectedSectionId}
+                blocks={blocksById}
+                sections={sectionMap}
+                page={page}
+                onBlockUpdate={updateBlockProperties}
+                onSectionUpdate={updateSectionProperties}
+                onPageUpdate={updatePageSettings}
+              />
+            </>
+          )}
         </div>
       </div>
     </main>
