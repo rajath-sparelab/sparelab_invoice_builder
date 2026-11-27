@@ -5,6 +5,7 @@ import { HealthModule } from './modules/health/health.module';
 import { TemplatesModule } from './modules/templates/templates.module';
 import { DocumentsModule } from './modules/documents/documents.module';
 import { AuditModule } from './modules/audit/audit.module';
+import { PdfModule } from './modules/pdf/pdf.module';
 
 @Module({
   imports: [
@@ -14,9 +15,10 @@ import { AuditModule } from './modules/audit/audit.module';
     }),
     PrismaModule,
     HealthModule,
-    AuditModule,
     TemplatesModule,
     DocumentsModule,
+    AuditModule,
+    PdfModule,
   ],
   controllers: [],
   providers: [],

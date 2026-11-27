@@ -2,6 +2,7 @@
 
 import { TEMPLATE_STATUS } from '@/lib/template-config';
 import type { TemplateStatus } from '@sparelab/contracts';
+import { cn } from '@/lib/utils';
 
 interface StatusBadgeProps {
   status: TemplateStatus;
@@ -9,10 +10,10 @@ interface StatusBadgeProps {
 }
 
 const VARIANT_CLASSES: Record<string, string> = {
-  default: 'bg-primary text-primary-foreground',
+  default: 'bg-primary text-primary-foreground hover:bg-primary/80',
   secondary: 'bg-secondary text-secondary-foreground',
   outline: 'border text-foreground',
-  destructive: 'bg-destructive text-destructive-foreground',
+  destructive: 'bg-destructive text-destructive-foreground hover:bg-destructive/20',
 };
 
 export function StatusBadge({ status, className }: StatusBadgeProps) {
@@ -20,7 +21,11 @@ export function StatusBadge({ status, className }: StatusBadgeProps) {
 
   return (
     <span
-      className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium border ${VARIANT_CLASSES[variant]} ${className ?? ''}`}
+      className={cn(
+        'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-4xl border border-transparent text-xs font-medium whitespace-nowrap transition-all',
+        VARIANT_CLASSES[variant],
+        className,
+      )}
     >
       {label}
     </span>

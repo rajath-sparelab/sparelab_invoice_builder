@@ -45,6 +45,23 @@ interface EditorPageProps {
 const NEW_BLOCK_ID_PREFIX = 'block-';
 const NEW_SECTION_ID_PREFIX = 'section-';
 
+/**
+ * Representative document data used when generating a PDF from the editor so
+ * the downloaded PDF is meaningful without needing real document data.
+ */
+const SAMPLE_DOCUMENT_DATA: Record<string, unknown> = {
+  documentNumber: 'INV-2026-001',
+  documentDate: '26 Nov 2026',
+  title: 'Tax Invoice',
+  customer: { name: 'Acme Traders' },
+  items: [],
+  subtotal: 0,
+  tax: 0,
+  total: 0,
+  showHeader: true,
+  showLogo: true,
+};
+
 function generateId(prefix: string): string {
   return `${prefix}${crypto.randomUUID()}`;
 }
@@ -118,6 +135,7 @@ export default async function TemplateEditorPage({ params }: EditorPageProps) {
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [saveError, setSaveError] = useState<string | null>(null);
   const [previewEnabled, setPreviewEnabled] = useState(false);
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
 
   const sections = useMemo(
     () => (configuration?.sections ?? []).map((s) => ({
@@ -427,6 +445,31 @@ export default async function TemplateEditorPage({ params }: EditorPageProps) {
     await handleSave();
   }, [handleSave]);
 
+  const handleDownloadPdf = useCallback(async () => {
+    if (!configuration) return;
+    setDownloadingPdf(true);
+    try {
+      const blob = await apiService.downloadPdf(templateId, {
+        data: SAMPLE_DOCUMENT_DATA,
+        configuration,
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${configuration?.schemaVersion ?? 'document'}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : 'Failed to generate PDF.',
+      );
+    } finally {
+      setDownloadingPdf(false);
+    }
+  }, [configuration, templateId]);
+
   if (loading) {
     return (
       <main className="space-y-6 p-4">
@@ -481,6 +524,8 @@ export default async function TemplateEditorPage({ params }: EditorPageProps) {
         saveStatus={saveStatus}
         saveError={saveError}
         onRetrySave={handleSave}
+        onDownloadPdf={handleDownloadPdf}
+        downloadingPdf={downloadingPdf}
       />
 
       <div className="flex-1 overflow-hidden">

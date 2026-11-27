@@ -113,13 +113,13 @@ export default function TemplatesPage() {
             <input
               id="template-search"
               placeholder="Search by name"
-              className="flex-1 h-10 px-3 text-sm border rounded-md"
+              className="flex-1 h-8 px-3 text-sm border border-input rounded-lg"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
             <select
               id="template-doctype"
-              className="h-10 px-3 text-sm border rounded-md bg-background"
+              className="h-8 px-3 text-sm border border-input rounded-lg bg-background"
               value={docTypeFilter}
               onChange={(e) => setDocTypeFilter(e.target.value)}
             >
@@ -132,7 +132,7 @@ export default function TemplatesPage() {
             </select>
             <select
               id="template-status"
-              className="h-10 px-3 text-sm border rounded-md bg-background"
+              className="h-8 px-3 text-sm border border-input rounded-lg bg-background"
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
             >

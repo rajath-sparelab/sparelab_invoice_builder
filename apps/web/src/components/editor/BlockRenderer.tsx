@@ -55,7 +55,7 @@ export function BlockRenderer({
     <div
       onClick={onSelect}
       className={cn(
-        'rounded-md border p-2 cursor-pointer transition-all duration-200',
+        'rounded-lg border p-2 cursor-pointer transition-all duration-200',
         selected
           ? 'border-primary bg-primary/5 ring-1 ring-primary'
           : 'border-transparent hover:border-muted/50',
@@ -75,7 +75,7 @@ export function BlockRenderer({
         </div>
       )}
       {block.type === 'image' && (
-        <div className="flex flex-col items-center gap-2 h-24 w-24 border border-dashed rounded-md">
+        <div className="flex flex-col items-center gap-2 h-24 w-24 border border-dashed rounded-lg">
           <ImageIcon className="h-5 w-5 text-muted-foreground" />
           <span className="text-xs text-muted-foreground">
             {block.src || 'Image'}
@@ -83,7 +83,7 @@ export function BlockRenderer({
         </div>
       )}
       {block.type === 'table' && (
-        <div className="flex flex-col items-center gap-2 p-3 border border-dashed rounded-md bg-gray-50">
+        <div className="flex flex-col items-center gap-2 p-3 border border-dashed rounded-lg bg-secondary">
           <TableIcon className="h-5 w-5 text-muted-foreground" />
           <span className="text-xs text-muted-foreground">
             Table ({block.width ?? 3} cols × {block.height ?? 3} rows)
@@ -91,7 +91,7 @@ export function BlockRenderer({
         </div>
       )}
       {block.type === 'divider' && (
-        <div className="h-px w-full border-t border-muted" />
+        <div className="h-px w-full border-t border-border" />
       )}
       {block.type === 'spacer' && (
         <div className="h-4 w-full bg-transparent" />

@@ -28,12 +28,12 @@ export function HealthStatus() {
       </span>
     );
     if (s === 'up') return (
-      <span className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs bg-green-100 text-green-800 border border-green-200">
+      <span className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs bg-secondary text-secondary-foreground border border-border">
         <CheckCircle className="h-3 w-3" /> Up
       </span>
     );
     return (
-      <span className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs bg-red-100 text-red-800 border border-red-200">
+      <span className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs bg-destructive/10 text-destructive border border-destructive/20">
         <XCircle className="h-3 w-3" /> Down
       </span>
     );

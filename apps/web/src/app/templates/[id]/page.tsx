@@ -257,7 +257,7 @@ export default function TemplateDetailPage() {
                 <input
                   id="edit-name"
                   type="text"
-                  className="h-10 px-3 text-sm border rounded-md focus-visible:ring-2 focus-visible:ring-ring"
+                  className="h-8 px-3 text-sm border border-input rounded-lg focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
                   value={formValues.name}
                   onChange={(e) => setFormValues({ ...formValues, name: e.target.value })}
                 />
@@ -271,7 +271,7 @@ export default function TemplateDetailPage() {
                 <textarea
                   id="edit-description"
                   rows={3}
-                  className="h-24 px-3 text-sm border rounded-md focus-visible:ring-2 focus-visible:ring-ring"
+                  className="h-24 px-3 text-sm border border-input rounded-lg focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
                   value={formValues.description}
                   onChange={(e) =>
                     setFormValues({ ...formValues, description: e.target.value })
@@ -288,7 +288,7 @@ export default function TemplateDetailPage() {
                 </label>
                 <select
                   id="edit-doctype"
-                  className="h-10 px-3 text-sm border rounded-md bg-background focus-visible:ring-2 focus-visible:ring-ring"
+                  className="h-8 px-3 text-sm border border-input rounded-lg bg-background focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
                   value={formValues.documentType}
                   onChange={(e) =>
                     setFormValues({ ...formValues, documentType: e.target.value })

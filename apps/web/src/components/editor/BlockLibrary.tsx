@@ -106,8 +106,8 @@ const BLOCKS: BlockLibraryItem[] = [
 ];
 
 const CATEGORY_COLORS: Record<string, string> = {
-  Content: 'border-blue-500/20 bg-blue-50/50 text-blue-700',
-  Structure: 'border-purple-500/20 bg-purple-50/50 text-purple-700',
+  Content: 'border-secondary bg-secondary text-secondary-foreground',
+  Structure: 'border-accent bg-accent text-accent-foreground',
 };
 
 /**
@@ -166,7 +166,7 @@ function BlockLibraryItem({ block, onAddBlock }: BlockLibraryItemProps) {
       variant="ghost"
       size="sm"
       className={cn(
-        'w-full flex items-center justify-between gap-2 text-left border rounded-md px-3 py-2 text-sm hover:bg-accent transition-colors',
+        'w-full flex items-center justify-between gap-2 text-left border rounded-lg px-3 py-2 text-sm hover:bg-accent transition-colors',
         CATEGORY_COLORS[block.category],
       )}
     >

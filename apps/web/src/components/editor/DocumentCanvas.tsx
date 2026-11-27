@@ -98,7 +98,7 @@ function SortableBlock({ block, index, sectionId, selected, onSelect, onDelete, 
       {...attributes}
       {...listeners}
       className={cn(
-        'flex items-center gap-2 rounded-md border p-2 mb-2 transition-all duration-200',
+        'flex items-center gap-2 rounded-lg border p-2 mb-2 transition-all duration-200',
         selected
           ? 'border-primary bg-primary/10 shadow-sm'
           : 'border-transparent hover:border-muted',
@@ -175,7 +175,7 @@ function SortableSection({ section, index, selected, onSelect, onDelete, onAddBl
             />
           ))}
         </SortableContext>
-        <div className="h-8 border-2 border-dashed rounded-md flex items-center justify-center text-xs text-muted-foreground" role="button" onClick={() => onSelect()}>
+        <div className="h-8 border-2 border-dashed rounded-lg flex items-center justify-center text-xs text-muted-foreground" role="button" onClick={() => onSelect()}>
           Drop block here
         </div>
       </CardContent>

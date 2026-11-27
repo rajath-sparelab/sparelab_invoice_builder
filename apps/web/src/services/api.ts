@@ -171,6 +171,29 @@ class ApiService {
     );
     return data;
   }
+
+  /* ------------------------------------------------------------------ */
+  // PDF generation
+  /* ------------------------------------------------------------------ */
+
+  async downloadPdf(
+    templateId: string,
+    dto: { data: Record<string, unknown>; configuration?: unknown; filename?: string },
+  ): Promise<Blob> {
+    const path = `/templates/${templateId}/pdf`;
+    const res = await fetch(`${this.baseUrl}${path}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(dto),
+    });
+
+    if (!res.ok) {
+      const text = await res.text().catch(() => '');
+      throw new Error(`API error: ${res.status} ${res.statusText}${text ? ': ' + text : ''}`);
+    }
+
+    return res.blob();
+  }
 }
 
 export const apiService = new ApiService(API_BASE);

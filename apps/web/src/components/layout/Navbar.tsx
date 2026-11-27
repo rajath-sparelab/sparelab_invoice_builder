@@ -2,13 +2,13 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
-import { Menu, Layout, Settings, User } from 'lucide-react';
+import { Menu, Layout } from 'lucide-react';
 
 export function Navbar() {
   const [open, setOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-blur]:bg-background/80">
+    <header className="sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-blur]:bg-background/80">
       <div className="flex h-12 items-center justify-between px-4">
         <Link
           href="/"
@@ -21,13 +21,22 @@ export function Navbar() {
           <button className="md:hidden p-1" onClick={() => setOpen((o) => !o)}>
             <Menu className="h-6 w-6" />
           </button>
-          <Link href="/documents" className="px-3 py-2 text-sm font-medium rounded-md hover:bg-muted">
+          <Link
+            href="/documents"
+            className="px-3 py-2 text-sm font-medium rounded-lg hover:bg-accent"
+          >
             Documents
           </Link>
-          <Link href="/templates" className="px-3 py-2 text-sm font-medium rounded-md hover:bg-muted">
+          <Link
+            href="/templates"
+            className="px-3 py-2 text-sm font-medium rounded-lg hover:bg-accent"
+          >
             Templates
           </Link>
-          <Link href="/settings" className="px-3 py-2 text-sm font-medium rounded-md hover:bg-muted">
+          <Link
+            href="/settings"
+            className="px-3 py-2 text-sm font-medium rounded-lg hover:bg-accent"
+          >
             Settings
           </Link>
         </div>

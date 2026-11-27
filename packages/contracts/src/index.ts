@@ -45,6 +45,8 @@ export {
   type PageSize,
   type PageSizeName,
 } from './renderer/layout';
+export { renderDocumentHtml } from './renderer/html';
+export { blockToStyle } from './renderer/block-styles';
 
 export type { Binding } from './schemas/template-config';
 

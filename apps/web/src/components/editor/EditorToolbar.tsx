@@ -1,9 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { Save, Undo, Redo, CheckCircle2, AlertCircle, FileText, Eye } from 'lucide-react';
+import { Save, Undo, Redo, CheckCircle2, AlertCircle, FileText, Eye, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 interface EditorToolbarProps {
   canUndo: boolean;
@@ -18,6 +17,8 @@ interface EditorToolbarProps {
   saveStatus: 'idle' | 'saving' | 'saved' | 'error';
   saveError: string | null;
   onRetrySave: () => void;
+  onDownloadPdf: () => void;
+  downloadingPdf: boolean;
 }
 
 export function EditorToolbar({
@@ -33,12 +34,14 @@ export function EditorToolbar({
   saveStatus,
   saveError,
   onRetrySave,
+  onDownloadPdf,
+  downloadingPdf,
 }: EditorToolbarProps) {
   const [statusMessage, setStatusMessage] = useState('');
 
   const statusIcon =
     saveStatus === 'saved' ? (
-      <CheckCircle2 className="h-4 w-4 text-green-600" />
+      <CheckCircle2 className="h-4 w-4 text-secondary-foreground" />
     ) : saveStatus === 'error' ? (
       <AlertCircle className="h-4 w-4 text-destructive" />
     ) : (
@@ -91,11 +94,22 @@ export function EditorToolbar({
             <Eye className="h-3 w-3" />
             <span className="ml-1 text-xs">Preview</span>
           </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={downloadingPdf ? undefined : onDownloadPdf}
+            aria-label="Download PDF"
+          >
+            <Download className="h-3 w-3" />
+            <span className="ml-1 text-xs">
+              {downloadingPdf ? 'Generating…' : 'Download PDF'}
+            </span>
+          </Button>
         </div>
       </div>
 
       <div className="flex items-center gap-3">
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-muted/50 border border-transparent">
+        <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-muted/50 border border-transparent">
           {statusIcon}
           <span className="text-xs font-medium text-foreground">
             {saveStatus === 'saving' ? 'Saving…' : statusText}

@@ -89,7 +89,7 @@ export default function NewTemplatePage() {
                 id="template-name"
                 type="text"
                 placeholder="e.g. Standard Invoice"
-                className="h-10 px-3 text-sm border rounded-md focus-visible:ring-2 focus-visible:ring-ring"
+                className="h-8 px-3 text-sm border border-input rounded-lg focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
                 value={values.name}
                 onChange={(e) => setValues({ ...values, name: e.target.value })}
               />
@@ -106,7 +106,7 @@ export default function NewTemplatePage() {
                 id="template-description"
                 placeholder="What kind of documents will this template generate?"
                 rows={3}
-                className="h-24 px-3 text-sm border rounded-md focus-visible:ring-2 focus-visible:ring-ring"
+                className="h-24 px-3 text-sm border border-input rounded-lg focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
                 value={values.description}
                 onChange={(e) => setValues({ ...values, description: e.target.value })}
               />
@@ -121,7 +121,7 @@ export default function NewTemplatePage() {
               </label>
               <select
                 id="template-doctype"
-                className="h-10 px-3 text-sm border rounded-md bg-background focus-visible:ring-2 focus-visible:ring-ring"
+                className="h-10 px-3 text-sm border border-input rounded-lg bg-background focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
                 value={values.documentType}
                 onChange={(e) => setValues({ ...values, documentType: e.target.value })}
               >

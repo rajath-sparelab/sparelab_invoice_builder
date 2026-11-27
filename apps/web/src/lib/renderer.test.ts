@@ -7,6 +7,7 @@ import {
   contentBox,
   PAGE_SIZES,
   DEFAULT_MARGINS,
+  renderDocumentHtml,
 } from '@sparelab/contracts';
 
 describe('getBindingPath', () => {
@@ -176,3 +177,132 @@ describe('contentBox', () => {
     expect(PAGE_SIZES.A3.width).toBeGreaterThan(PAGE_SIZES.A4.width);
   });
 });
+
+describe('renderDocumentHtml', () => {
+  const baseConfig = {
+    schemaVersion: '1.0.0',
+    page: {
+      size: 'A4',
+      orientation: 'portrait',
+      margins: { top: 20, right: 20, bottom: 20, left: 20 },
+    },
+    sections: [
+      {
+        id: 's1',
+        name: 'Section 1',
+        visible: true,
+        blocks: [
+          { id: 'b1', type: 'text', content: 'Hello {{customer.name}}', style: {} },
+          { id: 'b2', type: 'divider', style: {} },
+        ],
+      },
+      {
+        id: 's2',
+        name: 'Section 2',
+        visible: true,
+        blocks: [{ id: 'b3', type: 'text', content: 'Second page', style: {} }],
+      },
+    ],
+  } as any;
+
+  const DATA = { customer: { name: 'Acme' } };
+
+  it('renders a full HTML document', () => {
+    const html = renderDocumentHtml(baseConfig, DATA);
+    expect(html).toContain('<!DOCTYPE html>');
+    expect(html).toContain('<title>Document</title>');
+    expect(html).toContain('Hello {{customer.name}}');
+    expect(html).toContain('Second page');
+  });
+
+  it('renders one page per section (multi-page)', () => {
+    const html = renderDocumentHtml(baseConfig, DATA);
+    const pageCount = (html.match(/<div class="document-page"/g) || []).length;
+    expect(pageCount).toBe(2);
+  });
+
+  it('escapes HTML in text content', () => {
+    const config = {
+      ...baseConfig,
+      sections: [
+        {
+          ...baseConfig.sections[0],
+          blocks: [{ id: 'b1', type: 'text', content: '<script>alert(1)</script>', style: {} }],
+        },
+      ],
+    };
+    const html = renderDocumentHtml(config, DATA);
+    expect(html).toContain('&lt;script&gt;');
+    expect(html).not.toContain('<script>');
+  });
+
+  it('resolves bindings in text blocks', () => {
+    const config = {
+      ...baseConfig,
+      sections: [
+        {
+          ...baseConfig.sections[0],
+          blocks: [{ id: 'b1', type: 'text', content: 'doc', binding: '{{documentNumber}}', style: {} }],
+        },
+      ],
+    };
+    const html = renderDocumentHtml(config, { ...DATA, documentNumber: 'INV-001' });
+    expect(html).toContain('INV-001');
+    expect(html).not.toContain('{{documentNumber}}');
+  });
+
+  it('omits hidden sections', () => {
+    const config = {
+      ...baseConfig,
+      sections: [
+        { ...baseConfig.sections[0], visible: false },
+        baseConfig.sections[1],
+      ],
+    };
+    const html = renderDocumentHtml(config, DATA);
+    expect(html).toContain('Second page');
+    expect(html).not.toContain('Hello');
+  });
+
+  it('renders repeating table rows', () => {
+    const config = {
+      ...baseConfig,
+      sections: [
+        {
+          id: 's1',
+          blocks: [
+            {
+              id: 't1',
+              type: 'table',
+              repeat: '{{items}}',
+              columns: [
+                { id: 'c1', header: 'Item', key: 'item' },
+                { id: 'c2', header: 'Qty', key: 'quantity' },
+              ],
+              rows: [],
+            },
+          ],
+        },
+      ],
+    };
+    const html = renderDocumentHtml(config, { items: [{ item: 'Widget', quantity: 2 }] });
+    expect(html).toContain('Widget');
+    expect(html).toContain('2');
+  });
+
+  it('renders image block', () => {
+    const config = {
+      ...baseConfig,
+      sections: [
+        {
+          ...baseConfig.sections[0],
+          blocks: [{ id: 'b1', type: 'image', src: 'https://example.com/logo.png', alt: 'Logo', style: {} }],
+        },
+      ],
+    };
+    const html = renderDocumentHtml(config, DATA);
+    expect(html).toContain('https://example.com/logo.png');
+    expect(html).toContain('alt="Logo"');
+  });
+});
+

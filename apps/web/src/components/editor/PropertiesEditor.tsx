@@ -40,7 +40,7 @@ function BlockStyleRow({
         <select
           value={String(currentValue ?? '')}
           onChange={(e) => onStyleChange(key, e.target.value === '' ? undefined : e.target.value)}
-          className="h-8 w-full rounded-md border border-input bg-background px-2 py-1 text-xs focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          className="h-8 w-full rounded-lg border border-input bg-background px-2 py-1 text-xs focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
         >
           <option value="">Default</option>
           {options.map((opt) => (
@@ -68,7 +68,7 @@ function BlockStyleRow({
             type="text"
             value={typeof currentValue === 'string' ? currentValue : ''}
             onChange={(e) => onStyleChange(key, e.target.value || undefined)}
-            className="flex-1 h-8 rounded-md border border-input bg-background px-2 py-1 text-xs focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            className="flex-1 h-8 rounded-lg border border-input bg-background px-2 py-1 text-xs focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
             placeholder="hex"
           />
         </div>
@@ -90,7 +90,7 @@ function BlockStyleRow({
             onStyleChange(key, val === '' ? undefined : val);
           }
         }}
-        className="h-8 w-full rounded-md border border-input bg-background px-2 py-1 text-xs focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+        className="h-8 w-full rounded-lg border border-input bg-background px-2 py-1 text-xs focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
       />
     </div>
   );
@@ -189,7 +189,7 @@ export function TextBlockProps({
             onUpdate({ content: e.target.value });
           }}
           rows={4}
-          className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
         />
       </div>
       <BindingDropdown
@@ -202,7 +202,7 @@ export function TextBlockProps({
           type="checkbox"
           checked={block.visible ?? true}
           onChange={(e) => onUpdate({ visible: e.target.checked })}
-          className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+          className="h-4 w-4 rounded border-border text-primary focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
         />
         <label htmlFor="block-visible" className="text-sm text-foreground">
           Visible
@@ -231,7 +231,7 @@ export function ImageBlockProps({
         <input
           value={block.src ?? ''}
           onChange={(e) => onUpdate({ src: e.target.value || undefined })}
-          className="h-9 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          className="h-9 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
         />
       </div>
       <BindingDropdown
@@ -245,7 +245,7 @@ export function ImageBlockProps({
         <input
           value={block.alt ?? ''}
           onChange={(e) => onUpdate({ alt: e.target.value || undefined })}
-          className="h-9 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          className="h-9 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
         />
       </div>
       <div className="grid gap-3 sm:grid-cols-2">
@@ -270,7 +270,7 @@ export function ImageBlockProps({
           type="checkbox"
           checked={block.visible ?? true}
           onChange={(e) => onUpdate({ visible: e.target.checked })}
-          className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+          className="h-4 w-4 rounded border-border text-primary focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
         />
         <label htmlFor="image-visible" className="text-sm text-foreground">
           Visible
@@ -308,7 +308,7 @@ export function TableBlockProps({
           type="checkbox"
           checked={block.visible ?? true}
           onChange={(e) => onUpdate({ visible: e.target.checked })}
-          className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+          className="h-4 w-4 rounded border-border text-primary focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
         />
         <label htmlFor="table-visible" className="text-sm text-foreground">
           Visible
@@ -341,7 +341,7 @@ export function SectionBlockProps({
           type="checkbox"
           checked={visible ?? true}
           onChange={(e) => onVisibleChange(e.target.checked)}
-          className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+          className="h-4 w-4 rounded border-border text-primary focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
         />
         <label htmlFor="section-visible" className="text-sm text-foreground">
           Visible
@@ -369,7 +369,7 @@ export function PageSettingsSection({
           <select
             value={page.size}
             onChange={(e) => onPageChange({ size: e.target.value })}
-            className="h-9 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            className="h-9 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
           >
             <option value="A4">A4</option>
             <option value="A3">A3</option>
@@ -383,7 +383,7 @@ export function PageSettingsSection({
           <select
             value={page.orientation}
             onChange={(e) => onPageChange({ orientation: e.target.value })}
-            className="h-9 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            className="h-9 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
           >
             <option value="portrait">Portrait</option>
             <option value="landscape">Landscape</option>
@@ -401,7 +401,7 @@ export function PageSettingsSection({
                 const val = e.target.value === '' ? undefined : Number(e.target.value);
                 onPageChange({ margins: { ...page.margins, [side]: val ?? 20 } });
               }}
-              className="h-9 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              className="h-9 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
             />
           </div>
         ))}
